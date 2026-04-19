@@ -1,9 +1,0 @@
-{
-  "host": "smtp.review.com",
-  "port": 2465,
-  "secure": false,
-  "user": "review@example.com",
-  "pass": "secret-review",
-  "fromEmail": "sender@example.com",
-  "fromName": "评审员"
-}
