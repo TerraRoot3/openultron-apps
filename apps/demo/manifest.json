@@ -1,0 +1,22 @@
+{
+  "id": "demo",
+  "name": "OpenUltron Demo App",
+  "version": "0.1.0",
+  "host": {
+    "openUltron": ">=1.0.0",
+    "protocol": 1
+  },
+  "entry": {
+    "html": "index.html",
+    "service": {
+      "command": "node service.js",
+      "cwd": ".",
+      "portEnv": "PORT",
+      "startupTimeoutMs": 20000
+    }
+  },
+  "runtime": {
+    "browser": true,
+    "node": true
+  }
+}

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenUltron Demo App</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2028;
+      --text: #e6edf3;
+      --muted: #9fb0c0;
+      --ok: #3fb950;
+      --border: #2d3642;
+    }
+    html[data-theme="light"], html.theme-light {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --ok: #1a7f37;
+      --border: #d8dee6;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .card {
+      max-width: 820px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 16px;
+    }
+    .tag {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--ok);
+      font-size: 12px;
+    }
+    button {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    p { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>OpenUltron Demo App</h1>
+    <p>这个 demo 来自 <code>openultron-apps</code> 公开仓库，用于验证沙盒应用自动拉取与安装。</p>
+    <span id="health" class="tag">health: unknown</span>
+    <br />
+    <button id="btn" type="button">检查 /api/health</button>
+  </main>
+  <script>
+    const tag = document.getElementById('health')
+    const btn = document.getElementById('btn')
+    async function runHealth() {
+      try {
+        const res = await fetch('/api/health')
+        const data = await res.json()
+        if (res.ok && data && data.ok) {
+          tag.textContent = 'health: ok'
+          return
+        }
+        tag.textContent = 'health: invalid'
+      } catch (_) {
+        tag.textContent = 'health: failed'
+      }
+    }
+    btn.addEventListener('click', runHealth)
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenUltron Demo App</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2028;
+      --text: #e6edf3;
+      --muted: #9fb0c0;
+      --ok: #3fb950;
+      --border: #2d3642;
+    }
+    html[data-theme="light"], html.theme-light {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --ok: #1a7f37;
+      --border: #d8dee6;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .card {
+      max-width: 820px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 16px;
+    }
+    .tag {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--ok);
+      font-size: 12px;
+    }
+    button {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    p { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>OpenUltron Demo App</h1>
+    <p>这个 demo 来自 <code>openultron-apps</code> 公开仓库，用于验证沙盒应用自动拉取与安装。</p>
+    <span id="health" class="tag">health: unknown</span>
+    <br />
+    <button id="btn" type="button">检查 /api/health</button>
+  </main>
+  <script>
+    const tag = document.getElementById(health)
+    const btn = document.getElementById(btn)
+    async function runHealth() {
+      try {
+        const res = await fetch(/api/health)
+        const data = await res.json()
+        if (res.ok && data && data.ok) {
+          tag.textContent = health:
