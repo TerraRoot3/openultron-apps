@@ -1,0 +1,177 @@
+'use strict'
+
+const http = require('http')
+const fs = require('fs')
+const path = require('path')
+const nodemailer = require('nodemailer')
+const xlsx = require('xlsx')
+
+const host = '127.0.0.1'
+const port = Number(process.env.PORT || 3000)
+const root = __dirname
+
+function sendJson(res, status, payload) {
+  const body = JSON.stringify(payload)
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body)
+  })
+  res.end(body)
+}
+
+function sendFile(res, fp) {
+  const ext = path.extname(fp).toLowerCase()
+  const contentType = ext === '.html'
+    ? 'text/html; charset=utf-8'
+    : ext === '.js'
+      ? 'application/javascript; charset=utf-8'
+      : ext === '.css'
+        ? 'text/css; charset=utf-8'
+        : 'application/octet-stream'
+  res.writeHead(200, { 'Content-Type': contentType })
+  fs.createReadStream(fp).pipe(res)
+}
+
+// 解析Excel文件
+function parseExcel(filePath) {
+  const workbook = xlsx.readFile(filePath)
+  const sheetName = workbook.SheetNames[0]
+  const sheet = workbook.Sheets[sheetName]
+  const jsonData = xlsx.utils.sheet_to_json(sheet, { header: 1 })
+  if (jsonData.length === 0) return { headers: [], rows: [] }
+  const headers = jsonData[0]
+  const rows = jsonData.slice(1).map(row => {
+    const obj = {}
+    headers.forEach((h, i) => {
+      obj[h] = row[i] || ''
+    })
+    return obj
+  })
+  return { headers, rows }
+}
+
+// 发送邮件的API处理函数
+async function sendEmails(reqData) {
+  const { smtpHost, smtpPort, smtpUser, smtpPass, from, subject, body, templateVars, records } = reqData
+
+  // 验证必需字段
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !from || !subject || !body || !records || records.length === 0) {
+    throw new Error('缺少必需参数或记录为空')
+  }
+
+  // 创建SMTP transporter
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: Number(smtpPort),
+    secure: Number(smtpPort) === 465,
+    auth: { user: smtpUser, pass: smtpPass },
+  })
+
+  // 验证连接
+  await transporter.verify()
+
+  const results = []
+  let successCount = 0
+  let failCount = 0
+
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]
+    try {
+      // 替换模板变量
+      let personalizedSubject = subject
+      let personalizedBody = body
+      for (const [key, value] of Object.entries(record)) {
+        const regex = new RegExp(`{{${key}}}`, 'gi')
+        personalizedSubject = personalizedSubject.replace(regex, value)
+        personalizedBody = personalizedBody.replace(regex, value)
+      }
+
+      await transporter.sendMail({
+        from,
+        to: record.email || record.to || record.Email || record.To,
+        subject: personalizedSubject,
+        html: personalizedBody,
+        // 也可以支持纯文本备用
+        text: personalizedBody.replace(/<[^>]*>/g, ''),
+      })
+
+      results.push({ index: i, success: true, email: record.email || record.to || record.Email || record.To })
+      successCount++
+    } catch (err) {
+      results.push({ index: i, success: false, error: err.message, email: record.email || record.to || record.Email || record.To })
+      failCount++
+    }
+  }
+
+  return { success: true, successCount, failCount, results }
+}
+
+const server = http.createServer(async (req, res) => {
+  const reqUrl = String(req.url || '/')
+
+  // CORS头
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.writeHead(200).end()
+  }
+
+  // API路由
+  if (reqUrl === '/health' || reqUrl === '/api/health') {
+    return sendJson(res, 200, { ok: true, service: 'email-batch-sender', ts: new Date().toISOString() })
+  }
+
+  if (reqUrl === '/api/parse' && req.method === 'POST') {
+    try {
+      const chunks = []
+      for await (const chunk of req) {
+        chunks.push(chunk)
+      }
+      const buffer = Buffer.concat(chunks)
+      // 保存临时文件
+      const tempPath = path.join(root, 'temp_' + Date.now() + '.xlsx')
+      fs.writeFileSync(tempPath, buffer)
+      const { headers, rows } = parseExcel(tempPath)
+      fs.unlinkSync(tempPath)
+      sendJson(res, 200, { success: true, headers, rows, count: rows.length })
+    } catch (err) {
+      sendJson(res, 500, { success: false, error: err.message })
+    }
+    return
+  }
+
+  if (reqUrl === '/api/send' && req.method === 'POST') {
+    try {
+      const chunks = []
+      for await (const chunk of req) {
+        chunks.push(chunk)
+      }
+      const reqData = JSON.parse(Buffer.concat(chunks))
+      const result = await sendEmails(reqData)
+      sendJson(res, 200, result)
+    } catch (err) {
+      sendJson(res, 500, { success: false, error: err.message })
+    }
+    return
+  }
+
+  // 静态文件服务
+  const pathname = reqUrl.split('?')[0]
+  const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\\/+/, '')
+  const abs = path.resolve(root, rel)
+  if (abs !== root && !abs.startsWith(root + path.sep)) {
+    res.writeHead(403)
+    return res.end('Forbidden')
+  }
+  if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
+    res.writeHead(404)
+    return res.end('Not Found')
+  }
+  return sendFile(res, abs)
+})
+
+server.listen(port, host, () => {
+  process.stdout.write('[email-batch-sender] running at http://' + host + ':' + port + '\\n')
+})

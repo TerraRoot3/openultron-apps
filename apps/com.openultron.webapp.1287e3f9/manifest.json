@@ -1,0 +1,22 @@
+{
+  "id": "com.openultron.webapp.1287e3f9",
+  "name": "邮件批量发送工具",
+  "version": "0.1.0",
+  "host": {
+    "openUltron": ">=1.0.0",
+    "protocol": 1
+  },
+  "entry": {
+    "html": "index.html",
+    "service": {
+      "command": "node service.js",
+      "cwd": ".",
+      "portEnv": "PORT",
+      "startupTimeoutMs": 20000
+    }
+  },
+  "runtime": {
+    "browser": true,
+    "node": true
+  }
+}
